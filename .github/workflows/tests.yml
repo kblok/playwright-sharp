@@ -40,7 +40,7 @@ jobs:
           path: ./src/PlaywrightSharp.Tests/TestResults/TestResults.xml
   test_linux:
     name: ${{ matrix.product }} on ubuntu-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     strategy:
       fail-fast: false
       matrix:
