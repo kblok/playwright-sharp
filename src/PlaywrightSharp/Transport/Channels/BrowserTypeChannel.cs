@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using PlaywrightSharp.Helpers;
 
@@ -33,12 +34,14 @@ namespace PlaywrightSharp.Transport.Channels
         {
             var args = new Dictionary<string, object>();
 
-            if (channel != global::PlaywrightSharp.BrowserChannel.Undefined)
+            if (channel != PlaywrightSharp.BrowserChannel.Undefined)
             {
                 args.Add("channel", channel);
-            }
 
-            if (!string.IsNullOrEmpty(executablePath))
+                // Temporal for demo purposes.
+                args.Add("executablePath", GetChannelPath(channel));
+            }
+            else if (!string.IsNullOrEmpty(executablePath))
             {
                 args.Add("executablePath", executablePath);
             }
@@ -181,9 +184,11 @@ namespace PlaywrightSharp.Transport.Channels
             if (channel != PlaywrightSharp.BrowserChannel.Undefined)
             {
                 channelArgs.Add("channel", channel);
-            }
 
-            if (!string.IsNullOrEmpty(executablePath))
+                // Temporal for demo purposes.
+                channelArgs.Add("executablePath", GetChannelPath(channel));
+            }
+            else if (!string.IsNullOrEmpty(executablePath))
             {
                 channelArgs.Add("executablePath", executablePath);
             }
@@ -370,5 +375,44 @@ namespace PlaywrightSharp.Transport.Channels
 
             return Connection.SendMessageToServerAsync<BrowserContextChannel>(Guid, "launchPersistentContext", channelArgs, false);
         }
+
+        private string GetChannelPath(PlaywrightSharp.BrowserChannel channel)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetDarwinExecutablePath(channel);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetLinuxExecutablePath(channel);
+            }
+            else
+            {
+                return GetWindowsExecutablePath(channel);
+            }
+        }
+
+        private string GetWindowsExecutablePath(PlaywrightSharp.BrowserChannel channel)
+            => channel switch
+            {
+                PlaywrightSharp.BrowserChannel.Chrome => "/opt/google/chrome/chrome",
+                PlaywrightSharp.BrowserChannel.ChromeBeta => "/opt/google/chrome-beta/chrome",
+                PlaywrightSharp.BrowserChannel.ChromeDev => "/opt/google/chrome-unstable/chrome",
+                PlaywrightSharp.BrowserChannel.MsedgeDev => "/opt/microsoft/msedge-dev/msedge",
+                _ => "/opt/google/chrome/chrome",
+            };
+
+        private string GetLinuxExecutablePath(PlaywrightSharp.BrowserChannel channel)
+            => channel switch
+            {
+                PlaywrightSharp.BrowserChannel.Chrome => "c:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+                PlaywrightSharp.BrowserChannel.ChromeBeta => "c:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+                PlaywrightSharp.BrowserChannel.ChromeDev => "c:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+                PlaywrightSharp.BrowserChannel.MsedgeDev => "c:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+                _ => "c:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+            };
+
+        private string GetDarwinExecutablePath(PlaywrightSharp.BrowserChannel channel)
+            => throw new NotImplementedException();
     }
 }
