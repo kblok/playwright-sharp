@@ -261,16 +261,60 @@ namespace Microsoft.Playwright
 		/// A glob pattern, regex pattern or predicate receiving <see cref="URL"/> to match
 		/// while routing.
 		/// </param>
+		/// <param name="handler">handler function to route the request.</param>
+		Task RouteAsync(string urlString, Action<IRoute> handler);
+		
+		/// <summary>
+		/// <para>
+		/// Routing provides the capability to modify network requests that are made by any
+		/// page in the browser context. Once route is enabled, every request matching the url
+		/// pattern will stall unless it's continued, fulfilled or aborted.
+		/// </para>
+		/// <para>An example of a naive handler that aborts all image requests:</para>
+		/// <para>or the same snippet using a regex pattern instead:</para>
+		/// <para>
+		/// It is possible to examine the request to decide the route action. For example, mocking
+		/// all requests that contain some post data, and leaving all other requests as is:
+		/// </para>
+		/// <para>
+		/// Page routes (set up with <see cref="IPage.RouteAsync"/>) take precedence over browser
+		/// context routes when request matches both handlers.
+		/// </para>
+		/// <para>To remove a route with its handler you can use <see cref="IBrowserContext.UnrouteAsync"/>.</para>
+		/// </summary>
+		/// <remarks><para>Enabling routing disables http cache.</para></remarks>
 		/// <param name="urlRegex">
 		/// A glob pattern, regex pattern or predicate receiving <see cref="URL"/> to match
 		/// while routing.
 		/// </param>
+		/// <param name="handler">handler function to route the request.</param>
+		Task RouteAsync(Regex urlRegex, Action<IRoute> handler);
+		
+		/// <summary>
+		/// <para>
+		/// Routing provides the capability to modify network requests that are made by any
+		/// page in the browser context. Once route is enabled, every request matching the url
+		/// pattern will stall unless it's continued, fulfilled or aborted.
+		/// </para>
+		/// <para>An example of a naive handler that aborts all image requests:</para>
+		/// <para>or the same snippet using a regex pattern instead:</para>
+		/// <para>
+		/// It is possible to examine the request to decide the route action. For example, mocking
+		/// all requests that contain some post data, and leaving all other requests as is:
+		/// </para>
+		/// <para>
+		/// Page routes (set up with <see cref="IPage.RouteAsync"/>) take precedence over browser
+		/// context routes when request matches both handlers.
+		/// </para>
+		/// <para>To remove a route with its handler you can use <see cref="IBrowserContext.UnrouteAsync"/>.</para>
+		/// </summary>
+		/// <remarks><para>Enabling routing disables http cache.</para></remarks>
 		/// <param name="urlFunc">
 		/// A glob pattern, regex pattern or predicate receiving <see cref="URL"/> to match
 		/// while routing.
 		/// </param>
 		/// <param name="handler">handler function to route the request.</param>
-		Task RouteAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, Action<IRoute> handler);
+		Task RouteAsync(Func<string, bool> urlFunc, Action<IRoute> handler);
 	
 		/// <summary>
 		/// <para>
@@ -365,23 +409,41 @@ namespace Microsoft.Playwright
 		/// <summary>
 		/// <para>
 		/// Removes a route created with <see cref="IBrowserContext.RouteAsync"/>. When <paramref
-		/// name="handler"/> is not specified, removes all routes for the <paramref name="urlString"/>.
+		/// name="handler"/> is not specified, removes all routes for the <paramref name="url"/>.
 		/// </para>
 		/// </summary>
 		/// <param name="urlString">
 		/// A glob pattern, regex pattern or predicate receiving <see cref="URL"/> used to register
 		/// a routing with <see cref="IBrowserContext.RouteAsync"/>.
 		/// </param>
+		/// <param name="handler">Optional handler function used to register a routing with <see cref="IBrowserContext.RouteAsync"/>.</param>
+		Task UnrouteAsync(string urlString, Action<IRoute> handler = default);
+		
+		/// <summary>
+		/// <para>
+		/// Removes a route created with <see cref="IBrowserContext.RouteAsync"/>. When <paramref
+		/// name="handler"/> is not specified, removes all routes for the <paramref name="url"/>.
+		/// </para>
+		/// </summary>
 		/// <param name="urlRegex">
 		/// A glob pattern, regex pattern or predicate receiving <see cref="URL"/> used to register
 		/// a routing with <see cref="IBrowserContext.RouteAsync"/>.
 		/// </param>
+		/// <param name="handler">Optional handler function used to register a routing with <see cref="IBrowserContext.RouteAsync"/>.</param>
+		Task UnrouteAsync(Regex urlRegex, Action<IRoute> handler = default);
+		
+		/// <summary>
+		/// <para>
+		/// Removes a route created with <see cref="IBrowserContext.RouteAsync"/>. When <paramref
+		/// name="handler"/> is not specified, removes all routes for the <paramref name="url"/>.
+		/// </para>
+		/// </summary>
 		/// <param name="urlFunc">
 		/// A glob pattern, regex pattern or predicate receiving <see cref="URL"/> used to register
 		/// a routing with <see cref="IBrowserContext.RouteAsync"/>.
 		/// </param>
 		/// <param name="handler">Optional handler function used to register a routing with <see cref="IBrowserContext.RouteAsync"/>.</param>
-		Task UnrouteAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, Action<IRoute> handler = default);
+		Task UnrouteAsync(Func<string, bool> urlFunc, Action<IRoute> handler = default);
 	
 		/// <summary>
 		/// <para>

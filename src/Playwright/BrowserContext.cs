@@ -104,14 +104,14 @@ namespace Microsoft.Playwright
         public Task AddCookiesAsync(params Cookie[] cookies) => Channel.AddCookiesAsync(cookies);
 
         /// <inheritdoc/>
-        public Task AddInitScriptAsync(string script = null, string scriptPath = null, object arg = null)
+        public Task AddInitScriptAsync(string script = null, string scriptPath = null)
         {
             if (string.IsNullOrEmpty(script))
             {
                 script = ScriptsHelper.EvaluationScript(script, scriptPath);
             }
 
-            return Channel.AddInitScriptAsync(ScriptsHelper.SerializeScriptCall(script, arg != null ? new[] { arg } : null));
+            return Channel.AddInitScriptAsync(ScriptsHelper.SerializeScriptCall(script, null));
         }
 
         /// <inheritdoc/>
@@ -141,10 +141,10 @@ namespace Microsoft.Playwright
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyCollection<BrowserContextCookiesResult>> GetCookiesAsync(IEnumerable<string> urls = null) => Channel.GetCookiesAsync(urls);
+        public Task<IReadOnlyCollection<BrowserContextCookiesResult>> GetCookiesAsync(string urls) => Channel.GetCookiesAsync(new[] { urls });
 
         /// <inheritdoc/>
-        public Task<IReadOnlyCollection<BrowserContextCookiesResult>> GetCookiesAsync(params string[] urls) => Channel.GetCookiesAsync(urls);
+        public Task<IReadOnlyCollection<BrowserContextCookiesResult>> GetCookiesAsync(IEnumerable<string> urls = null) => Channel.GetCookiesAsync(urls);
 
         /// <inheritdoc/>
         public Task ExposeBindingAsync(string name, Action callback, bool? handle = null) => throw new NotImplementedException();
@@ -227,27 +227,16 @@ namespace Microsoft.Playwright
         }
 
         /// <inheritdoc/>
-        public Task RouteAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, Action<IRoute> handler)
-            => RouteAsync(
-                new RouteSetting()
-                {
-                    Regex = urlRegex,
-                    Url = urlString,
-                    Function = urlFunc,
-                    Handler = handler,
-                });
+        public Task RouteAsync(string url, Action<IRoute> handler)
+            => RouteAsync(url, null, null, handler);
 
-        /// <inheritdoc cref="RouteAsync(string, Regex, Func{string, bool}, Action{IRoute})"/>
-        public Task RouteAsync(string urlString, Action<IRoute> handler)
-            => RouteAsync(urlString, null, null, handler);
+        /// <inheritdoc/>
+        public Task RouteAsync(Regex url, Action<IRoute> handler)
+            => RouteAsync(null, url, null, handler);
 
-        /// <inheritdoc cref="RouteAsync(string, Regex, Func{string, bool}, Action{IRoute})"/>
-        public Task RouteAsync(Regex urlRegex, Action<IRoute> handler)
-            => RouteAsync(null, urlRegex, null, handler);
-
-        /// <inheritdoc cref="RouteAsync(string, Regex, Func{string, bool}, Action{IRoute})"/>
-        public Task RouteAsync(Func<string, bool> urlFunc, Action<IRoute> handler)
-            => RouteAsync(null, null, urlFunc, handler);
+        /// <inheritdoc/>
+        public Task RouteAsync(Func<string, bool> url, Action<IRoute> handler)
+            => RouteAsync(null, null, url, handler);
 
         /// <inheritdoc/>
         public Task SetExtraHttpHeadersAsync(IEnumerable<KeyValuePair<string, string>> headers)
@@ -275,26 +264,16 @@ namespace Microsoft.Playwright
         }
 
         /// <inheritdoc/>
-        public Task UnrouteAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, Action<IRoute> handler = null)
-            => UnrouteAsync(new RouteSetting()
-            {
-                Function = urlFunc,
-                Url = urlString,
-                Regex = urlRegex,
-                Handler = handler,
-            });
+        public Task UnrouteAsync(string url, Action<IRoute> handler = default)
+            => UnrouteAsync(url, null, null, handler);
 
-        /// <inheritdoc cref="UnrouteAsync(string, Regex, Func{string, bool}, Action{IRoute})"/>
-        public Task UnrouteAsync(string urlString, Action<IRoute> handler = default)
-            => UnrouteAsync(urlString, null, null, handler);
+        /// <inheritdoc/>
+        public Task UnrouteAsync(Regex url, Action<IRoute> handler = default)
+            => UnrouteAsync(null, url, null, handler);
 
-        /// <inheritdoc cref="UnrouteAsync(string, Regex, Func{string, bool}, Action{IRoute})"/>
-        public Task UnrouteAsync(Regex urlRegex, Action<IRoute> handler = default)
-            => UnrouteAsync(null, urlRegex, null, handler);
-
-        /// <inheritdoc cref="UnrouteAsync(string, Regex, Func{string, bool}, Action{IRoute})"/>
-        public Task UnrouteAsync(Func<string, bool> urlFunc, Action<IRoute> handler = default)
-            => UnrouteAsync(null, null, urlFunc, handler);
+        /// <inheritdoc/>
+        public Task UnrouteAsync(Func<string, bool> url, Action<IRoute> handler = default)
+            => UnrouteAsync(null, null, url, handler);
 
         /// <inheritdoc/>
         public async Task<object> WaitForEventAsync(string @event, float? timeout = null)
@@ -348,6 +327,16 @@ namespace Microsoft.Playwright
             _ = route.ResumeAsync();
         }
 
+        private Task RouteAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, Action<IRoute> handler)
+            => RouteAsync(
+                new RouteSetting()
+                {
+                    Regex = urlRegex,
+                    Url = urlString,
+                    Function = urlFunc,
+                    Handler = handler,
+                });
+
         private Task RouteAsync(RouteSetting setting)
         {
             _routes.Add(setting);
@@ -359,6 +348,15 @@ namespace Microsoft.Playwright
 
             return Task.CompletedTask;
         }
+
+        private Task UnrouteAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, Action<IRoute> handler = null)
+            => UnrouteAsync(new RouteSetting()
+            {
+                Function = urlFunc,
+                Url = urlString,
+                Regex = urlRegex,
+                Handler = handler,
+            });
 
         private Task UnrouteAsync(RouteSetting setting)
         {

@@ -224,70 +224,16 @@ namespace Microsoft.Playwright
             => WaitForNavigationAsync(null, null, null, waitUntil, timeout);
 
         /// <inheritdoc />
-        public Task<IResponse> WaitForNavigationAsync(Regex urlRegex, WaitUntilState waitUntil, float? timeout)
-            => WaitForNavigationAsync(null, urlRegex, null, waitUntil, timeout);
+        public Task<IResponse> WaitForNavigationAsync(string url, WaitUntilState waitUntil, float? timeout)
+            => WaitForNavigationAsync(url, null, null, waitUntil, timeout);
 
         /// <inheritdoc />
-        public Task<IResponse> WaitForNavigationAsync(Func<string, bool> urlFunc, WaitUntilState waitUntil, float? timeout)
-            => WaitForNavigationAsync(null, null, urlFunc, waitUntil, timeout);
+        public Task<IResponse> WaitForNavigationAsync(Regex url, WaitUntilState waitUntil, float? timeout)
+            => WaitForNavigationAsync(null, url, null, waitUntil, timeout);
 
         /// <inheritdoc />
-        public async Task<IResponse> WaitForNavigationAsync(
-            string urlString,
-            Regex urlRegex,
-            Func<string, bool> urlFunc,
-            WaitUntilState waitUntil,
-            float? timeout)
-        {
-            waitUntil = waitUntil.EnsureDefaultValue(WaitUntilState.Load);
-            var waiter = SetupNavigationWaiter(timeout);
-            string toUrl = !string.IsNullOrEmpty(urlString) ? $" to \"{urlString}\"" : string.Empty;
-
-            waiter.Log($"waiting for navigation{toUrl} until \"{waitUntil}\"");
-
-            var navigatedEvent = await waiter.WaitForEventAsync<FrameNavigatedEventArgs>(
-                this,
-                "Navigated",
-                e =>
-                {
-                    // Any failed navigation results in a rejection.
-                    if (e.Error != null)
-                    {
-                        return true;
-                    }
-
-                    waiter.Log($"  navigated to \"{e.Url}\"");
-                    return UrlMatches(e.Url, urlString, urlRegex, urlFunc);
-                }).ConfigureAwait(false);
-
-            if (navigatedEvent.Error != null)
-            {
-                var ex = new NavigationException(navigatedEvent.Error);
-                var tcs = new TaskCompletionSource<bool>();
-                tcs.TrySetException(ex);
-                await waiter.WaitForPromiseAsync(tcs.Task).ConfigureAwait(false);
-            }
-
-            if (!_loadStates.Select(s => s.ToValueString()).Contains(waitUntil.ToValueString()))
-            {
-                await waiter.WaitForEventAsync<LoadState>(
-                    this,
-                    "LoadState",
-                    e =>
-                    {
-                        waiter.Log($"  \"{e}\" event fired");
-                        return e.ToValueString() == waitUntil.ToValueString();
-                    }).ConfigureAwait(false);
-            }
-
-            var request = navigatedEvent.NewDocument?.Request?.Object;
-            var response = request != null
-                ? await waiter.WaitForPromiseAsync(request.FinalRequest.GetResponseAsync()).ConfigureAwait(false)
-                : null;
-
-            waiter.Dispose();
-            return response;
-        }
+        public Task<IResponse> WaitForNavigationAsync(Func<string, bool> url, WaitUntilState waitUntil, float? timeout)
+            => WaitForNavigationAsync(null, null, url, waitUntil, timeout);
 
         /// <inheritdoc />
         public Task FocusAsync(string selector, float? timeout) => FocusAsync(false, selector, timeout);
@@ -458,7 +404,70 @@ namespace Microsoft.Playwright
         public Task<bool> IsVisibleAsync(string selector, float? timeout) => IsVisibleAsync(false, selector, timeout);
 
         /// <inheritdoc />
-        public Task WaitForURLAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, float? timeout = null, WaitUntilState waitUntil = WaitUntilState.Undefined) => throw new NotImplementedException();
+        public Task WaitForURLAsync(string url, float? timeout = null, WaitUntilState waitUntil = WaitUntilState.Undefined) => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public Task WaitForURLAsync(Regex url, float? timeout = null, WaitUntilState waitUntil = WaitUntilState.Undefined) => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public Task WaitForURLAsync(Func<string, bool> url, float? timeout = null, WaitUntilState waitUntil = WaitUntilState.Undefined) => throw new NotImplementedException();
+
+        internal async Task<IResponse> WaitForNavigationAsync(
+            string urlString,
+            Regex urlRegex,
+            Func<string, bool> urlFunc,
+            WaitUntilState waitUntil,
+            float? timeout)
+        {
+            waitUntil = waitUntil.EnsureDefaultValue(WaitUntilState.Load);
+            var waiter = SetupNavigationWaiter(timeout);
+            string toUrl = !string.IsNullOrEmpty(urlString) ? $" to \"{urlString}\"" : string.Empty;
+
+            waiter.Log($"waiting for navigation{toUrl} until \"{waitUntil}\"");
+
+            var navigatedEvent = await waiter.WaitForEventAsync<FrameNavigatedEventArgs>(
+                this,
+                "Navigated",
+                e =>
+                {
+                    // Any failed navigation results in a rejection.
+                    if (e.Error != null)
+                    {
+                        return true;
+                    }
+
+                    waiter.Log($"  navigated to \"{e.Url}\"");
+                    return UrlMatches(e.Url, urlString, urlRegex, urlFunc);
+                }).ConfigureAwait(false);
+
+            if (navigatedEvent.Error != null)
+            {
+                var ex = new NavigationException(navigatedEvent.Error);
+                var tcs = new TaskCompletionSource<bool>();
+                tcs.TrySetException(ex);
+                await waiter.WaitForPromiseAsync(tcs.Task).ConfigureAwait(false);
+            }
+
+            if (!_loadStates.Select(s => s.ToValueString()).Contains(waitUntil.ToValueString()))
+            {
+                await waiter.WaitForEventAsync<LoadState>(
+                    this,
+                    "LoadState",
+                    e =>
+                    {
+                        waiter.Log($"  \"{e}\" event fired");
+                        return e.ToValueString() == waitUntil.ToValueString();
+                    }).ConfigureAwait(false);
+            }
+
+            var request = navigatedEvent.NewDocument?.Request?.Object;
+            var response = request != null
+                ? await waiter.WaitForPromiseAsync(request.FinalRequest.GetResponseAsync()).ConfigureAwait(false)
+                : null;
+
+            waiter.Dispose();
+            return response;
+        }
 
         internal Task TapAsync(bool isPageCall, string selector, IEnumerable<KeyboardModifier> modifiers, Position position, bool? force, bool? noWaitAfter, float? timeout)
             => _channel.TapAsync(selector, modifiers, position, timeout, force ?? false, noWaitAfter, isPageCall);

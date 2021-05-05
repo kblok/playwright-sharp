@@ -325,29 +325,13 @@ namespace Microsoft.Playwright
             => Frames.FirstOrDefault(f => f.Name == name);
 
         /// <inheritdoc />
-        public IFrame FrameByUrl(string urlString) => Frames.FirstOrDefault(f => urlString.UrlMatches(f.Url));
+        public IFrame FrameByUrl(string url) => Frames.FirstOrDefault(f => url.UrlMatches(f.Url));
 
         /// <inheritdoc />
-        public IFrame FrameByUrl(Regex urlRegex) => Frames.FirstOrDefault(f => urlRegex.IsMatch(f.Url));
+        public IFrame FrameByUrl(Regex url) => Frames.FirstOrDefault(f => url.IsMatch(f.Url));
 
         /// <inheritdoc />
-        public IFrame FrameByUrl(Func<string, bool> urlFunc) => Frames.FirstOrDefault(f => urlFunc(f.Url));
-
-        /// <inheritdoc />
-        public IFrame FrameByUrl(string urlString, Regex urlRegex, Func<string, bool> urlFunc)
-        {
-            if (string.IsNullOrEmpty(urlString))
-            {
-                return FrameByUrl(urlString);
-            }
-
-            if (urlRegex != null)
-            {
-                return FrameByUrl(urlRegex);
-            }
-
-            return FrameByUrl(urlFunc);
-        }
+        public IFrame FrameByUrl(Func<string, bool> url) => Frames.FirstOrDefault(f => url(f.Url));
 
         /// <inheritdoc />
         public Task<string> TitleAsync() => MainFrame.TitleAsync();
@@ -388,53 +372,28 @@ namespace Microsoft.Playwright
              => MainFrame.WaitForNavigationAsync(urlString: null, urlRegex: null, urlFunc: null, waitUntil: waitUntil, timeout: timeout);
 
         /// <inheritdoc />
-        public Task<IResponse> WaitForNavigationAsync(Regex urlRegex, WaitUntilState waitUntil, float? timeout)
-            => MainFrame.WaitForNavigationAsync(urlString: null, urlRegex: urlRegex, urlFunc: null, waitUntil: default, timeout: timeout);
+        public Task<IResponse> WaitForNavigationAsync(string url, WaitUntilState waitUntil, float? timeout)
+             => MainFrame.WaitForNavigationAsync(urlString: url, urlRegex: null, urlFunc: null, waitUntil: waitUntil, timeout: timeout);
 
         /// <inheritdoc />
-        public Task<IResponse> WaitForNavigationAsync(Func<string, bool> urlFunc, WaitUntilState waitUntil, float? timeout)
-            => MainFrame.WaitForNavigationAsync(urlString: null, urlRegex: null, urlFunc: urlFunc, waitUntil: default, timeout: timeout);
+        public Task<IResponse> WaitForNavigationAsync(Regex url, WaitUntilState waitUntil, float? timeout)
+            => MainFrame.WaitForNavigationAsync(urlString: null, urlRegex: url, urlFunc: null, waitUntil: waitUntil, timeout: timeout);
 
         /// <inheritdoc />
-        public Task WaitForURLAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, float? timeout = null, WaitUntilState waitUntil = WaitUntilState.Undefined)
-            => throw new NotImplementedException();
+        public Task<IResponse> WaitForNavigationAsync(Func<string, bool> url, WaitUntilState waitUntil, float? timeout)
+            => MainFrame.WaitForNavigationAsync(urlString: null, urlRegex: null, urlFunc: url, waitUntil: waitUntil, timeout: timeout);
 
         /// <inheritdoc />
-        public Task<IResponse> WaitForNavigationAsync(
-            string urlString,
-            Regex urlRegex,
-            Func<string, bool> urlFunc,
-            WaitUntilState waitUntil,
-            float? timeout)
-            => MainFrame.WaitForNavigationAsync(urlString, urlRegex, urlFunc, waitUntil, timeout);
+        public Task<IRequest> WaitForRequestAsync(string urlOrPredicate, float? timeout)
+            => WaitForEventAsync(PageEvent.Request, e => e.Url.Equals(urlOrPredicate, StringComparison.Ordinal), timeout);
 
         /// <inheritdoc />
-        public Task<IRequest> WaitForRequestAsync(string urlOrPredicateString, float? timeout)
-            => WaitForEventAsync(PageEvent.Request, e => e.Url.Equals(urlOrPredicateString, StringComparison.Ordinal), timeout);
+        public Task<IRequest> WaitForRequestAsync(Regex urlOrPredicate, float? timeout)
+            => WaitForEventAsync(PageEvent.Request, e => urlOrPredicate.IsMatch(e.Url), timeout);
 
         /// <inheritdoc />
-        public Task<IRequest> WaitForRequestAsync(Regex urlOrPredicateRegex, float? timeout)
-            => WaitForEventAsync(PageEvent.Request, e => urlOrPredicateRegex.IsMatch(e.Url), timeout);
-
-        /// <inheritdoc />
-        public Task<IRequest> WaitForRequestAsync(Func<IRequest, bool> urlOrPredicateFunc, float? timeout)
-            => WaitForEventAsync(PageEvent.Request, e => urlOrPredicateFunc(e), timeout);
-
-        /// <inheritdoc />
-        public Task<IRequest> WaitForRequestAsync(string urlOrPredicateString, Regex urlOrPredicateRegex, Func<IRequest, bool> urlOrPredicateFunc, float? timeout)
-        {
-            if (string.IsNullOrEmpty(urlOrPredicateString))
-            {
-                return WaitForRequestAsync(urlOrPredicateString, timeout);
-            }
-
-            if (urlOrPredicateRegex != null)
-            {
-                return WaitForRequestAsync(urlOrPredicateRegex, timeout);
-            }
-
-            return WaitForRequestAsync(urlOrPredicateFunc, timeout);
-        }
+        public Task<IRequest> WaitForRequestAsync(Func<IRequest, bool> urlOrPredicate, float? timeout)
+            => WaitForEventAsync(PageEvent.Request, e => urlOrPredicate(e), timeout);
 
         /// <inheritdoc />
         public Task<IPage> WaitForCloseAsync(float? timeout)
@@ -807,32 +766,16 @@ namespace Microsoft.Playwright
             => ExposeBindingAsync(name, (BindingSource _, T1 t1, T2 t2, T3 t3, T4 t4) => callback(t1, t2, t3, t4));
 
         /// <inheritdoc />
-        public Task<IResponse> WaitForResponseAsync(string urlOrPredicateString, float? timeout)
-            => WaitForEventAsync(PageEvent.Response, e => e.Url.Equals(urlOrPredicateString, StringComparison.Ordinal), timeout);
+        public Task<IResponse> WaitForResponseAsync(string urlOrPredicate, float? timeout)
+            => WaitForEventAsync(PageEvent.Response, e => e.Url.Equals(urlOrPredicate, StringComparison.Ordinal), timeout);
 
         /// <inheritdoc />
-        public Task<IResponse> WaitForResponseAsync(Regex urlOrPredicateRegex, float? timeout)
-            => WaitForEventAsync(PageEvent.Response, e => urlOrPredicateRegex.IsMatch(e.Url), timeout);
+        public Task<IResponse> WaitForResponseAsync(Regex urlOrPredicate, float? timeout)
+            => WaitForEventAsync(PageEvent.Response, e => urlOrPredicate.IsMatch(e.Url), timeout);
 
         /// <inheritdoc />
-        public Task<IResponse> WaitForResponseAsync(Func<IResponse, bool> urlOrPredicateFunc, float? timeout)
-            => WaitForEventAsync(PageEvent.Response, e => urlOrPredicateFunc(e), timeout);
-
-        /// <inheritdoc />
-        public Task<IResponse> WaitForResponseAsync(string urlOrPredicateString, Regex urlOrPredicateRegex, Func<IResponse, bool> urlOrPredicateFunc, float? timeout)
-        {
-            if (string.IsNullOrEmpty(urlOrPredicateString))
-            {
-                return WaitForResponseAsync(urlOrPredicateString, timeout);
-            }
-
-            if (urlOrPredicateRegex != null)
-            {
-                return WaitForResponseAsync(urlOrPredicateRegex, timeout);
-            }
-
-            return WaitForResponseAsync(urlOrPredicateFunc, timeout);
-        }
+        public Task<IResponse> WaitForResponseAsync(Func<IResponse, bool> urlOrPredicate, float? timeout)
+            => WaitForEventAsync(PageEvent.Response, e => urlOrPredicate(e), timeout);
 
         /// <inheritdoc />
         public async Task<byte[]> PdfAsync(
@@ -883,90 +826,67 @@ namespace Microsoft.Playwright
             => _channel.AddInitScriptAsync(ScriptsHelper.SerializeScriptCall(ScriptsHelper.EvaluationScript(script, scriptPath)));
 
         /// <inheritdoc />
-        public Task RouteAsync(string urlString, Action<IRoute> handler)
+        public Task RouteAsync(string url, Action<IRoute> handler)
             => RouteAsync(
                 new RouteSetting
                 {
-                    Url = urlString,
+                    Url = url,
                     Handler = handler,
                 });
 
         /// <inheritdoc />
-        public Task RouteAsync(Regex urlRegex, Action<IRoute> handler)
+        public Task RouteAsync(Regex url, Action<IRoute> handler)
             => RouteAsync(
                 new RouteSetting
                 {
-                    Regex = urlRegex,
+                    Regex = url,
                     Handler = handler,
                 });
 
         /// <inheritdoc />
-        public Task RouteAsync(Func<string, bool> urlFunc, Action<IRoute> handler)
+        public Task RouteAsync(Func<string, bool> url, Action<IRoute> handler)
             => RouteAsync(
                 new RouteSetting
                 {
-                    Function = urlFunc,
+                    Function = url,
                     Handler = handler,
                 });
 
         /// <inheritdoc />
-        public Task RouteAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, Action<IRoute> handler)
-        {
-            if (string.IsNullOrEmpty(urlString))
-            {
-                return RouteAsync(urlString, handler);
-            }
-
-            if (urlRegex != null)
-            {
-                return RouteAsync(urlRegex, handler);
-            }
-
-            return RouteAsync(urlFunc, handler);
-        }
-
-        /// <inheritdoc />
-        public Task UnrouteAsync(string urlString, Action<IRoute> handler)
+        public Task UnrouteAsync(string url, Action<IRoute> handler)
             => UnrouteAsync(
                 new RouteSetting
                 {
-                    Url = urlString,
+                    Url = url,
                     Handler = handler,
                 });
 
         /// <inheritdoc />
-        public Task UnrouteAsync(Regex urlString, Action<IRoute> handler)
+        public Task UnrouteAsync(Regex url, Action<IRoute> handler)
             => UnrouteAsync(
                 new RouteSetting
                 {
-                    Regex = urlString,
+                    Regex = url,
                     Handler = handler,
                 });
 
         /// <inheritdoc />
-        public Task UnrouteAsync(Func<string, bool> urlFunc, Action<IRoute> handler)
+        public Task UnrouteAsync(Func<string, bool> url, Action<IRoute> handler)
             => UnrouteAsync(
                 new RouteSetting
                 {
-                    Function = urlFunc,
+                    Function = url,
                     Handler = handler,
                 });
 
         /// <inheritdoc />
-        public Task UnrouteAsync(string urlString, Regex urlRegex, Func<string, bool> urlFunc, Action<IRoute> handler)
-        {
-            if (string.IsNullOrEmpty(urlString))
-            {
-                return UnrouteAsync(urlString, handler);
-            }
+        public Task WaitForURLAsync(string url, float? timeout = null, WaitUntilState waitUntil = WaitUntilState.Undefined) => throw new NotImplementedException();
 
-            if (urlRegex != null)
-            {
-                return UnrouteAsync(urlRegex, handler);
-            }
+        /// <inheritdoc />
+        public Task WaitForURLAsync(Regex url, float? timeout = null, WaitUntilState waitUntil = WaitUntilState.Undefined) => throw new NotImplementedException();
 
-            return UnrouteAsync(urlFunc, handler);
-        }
+        /// <inheritdoc />
+        public Task WaitForURLAsync(Func<string, bool> url, float? timeout = null, WaitUntilState waitUntil = WaitUntilState.Undefined) => throw new NotImplementedException();
 
         /// <inheritdoc />
         public Task WaitForLoadStateAsync(LoadState state, float? timeout)
@@ -1106,6 +1026,21 @@ namespace Microsoft.Playwright
             }
 
             Context.OnRoute(e.Route, e.Request);
+        }
+
+        private IFrame FrameByUrl(string urlString, Regex urlRegex, Func<string, bool> urlFunc)
+        {
+            if (string.IsNullOrEmpty(urlString))
+            {
+                return FrameByUrl(urlString);
+            }
+
+            if (urlRegex != null)
+            {
+                return FrameByUrl(urlRegex);
+            }
+
+            return FrameByUrl(urlFunc);
         }
 
         private void Channel_FrameDetached(object sender, IFrame args)
