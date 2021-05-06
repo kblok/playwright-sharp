@@ -10,5 +10,7 @@ namespace Microsoft.Playwright
     {
         /// <inheritdoc/>
         public string Name { get; set; }
+
+        internal string ApiName { get; set; }
     }
 }

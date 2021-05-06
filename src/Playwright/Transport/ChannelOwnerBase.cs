@@ -60,5 +60,47 @@ namespace Microsoft.Playwright.Transport
                 _objects.Clear();
             }
         }
+
+        internal Task WaitForEventInfoBeforeAsync(string waitId, string apiName)
+            => _connection.SendMessageToServerAsync(
+                Guid,
+                "waitForEventInfo",
+                new Dictionary<string, object>
+                {
+                    ["info"] = new Dictionary<string, object>()
+                    {
+                        ["apiName"] = apiName,
+                        ["waitId"] = waitId,
+                        ["phase"] = "before",
+                    },
+                });
+
+        internal Task WaitForEventInfoAfterAsync(string waitId, string error)
+            => _connection.SendMessageToServerAsync(
+                Guid,
+                "waitForEventInfo",
+                new Dictionary<string, object>
+                {
+                    ["info"] = new Dictionary<string, object>()
+                    {
+                        ["waitId"] = waitId,
+                        ["phase"] = "after",
+                        ["error"] = error,
+                    },
+                });
+
+        internal Task WaitForEventInfoLogAsync(string waitId, string message)
+            => _connection.SendMessageToServerAsync(
+                Guid,
+                "waitForEventInfo",
+                new Dictionary<string, object>
+                {
+                    ["info"] = new Dictionary<string, object>()
+                    {
+                        ["waitId"] = waitId,
+                        ["phase"] = "log",
+                        ["message"] = message,
+                    },
+                });
     }
 }

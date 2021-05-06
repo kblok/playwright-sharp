@@ -485,7 +485,7 @@ namespace Microsoft.Playwright
             }
 
             timeout ??= _defaultTimeout;
-            using var waiter = new Waiter();
+            using var waiter = new Waiter(this, pageEvent.ApiName);
             waiter.RejectOnTimeout(Convert.ToInt32(timeout), $"Timeout while waiting for event \"{typeof(T)}\"");
 
             if (pageEvent.Name != PageEvent.Crash.Name)

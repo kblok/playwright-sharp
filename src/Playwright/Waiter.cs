@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Playwright.Helpers;
+using Microsoft.Playwright.Transport;
 
 namespace Microsoft.Playwright
 {
@@ -14,12 +15,37 @@ namespace Microsoft.Playwright
         private readonly List<Task> _failures = new();
         private readonly List<Action> _dispose = new();
         private readonly CancellationTokenSource _cts = new();
+        private readonly Guid _waitId;
+        private readonly ChannelOwnerBase _channelOwner;
+        private readonly string _apiName;
         private bool _disposed;
+        private string _error;
+
+        public Waiter(ChannelOwnerBase channelOwner, string apiName)
+        {
+            _waitId = Guid.NewGuid();
+            _channelOwner = channelOwner;
+            _apiName = apiName;
+
+            if (!string.IsNullOrEmpty(apiName))
+            {
+                _ = _channelOwner.WaitForEventInfoBeforeAsync(_waitId.ToString(), apiName);
+            }
+        }
+
+        public Waiter() : this(null, null)
+        {
+        }
 
         public void Dispose()
         {
             if (!_disposed)
             {
+                if (!string.IsNullOrEmpty(_apiName))
+                {
+                    _ = _channelOwner.WaitForEventInfoAfterAsync(_waitId.ToString(), _error ?? string.Empty);
+                }
+
                 _disposed = true;
                 foreach (var dispose in _dispose)
                 {
@@ -118,12 +144,14 @@ namespace Microsoft.Playwright
             }
             catch (TimeoutException ex)
             {
+                _error = ex.ToString();
                 dispose?.Invoke();
                 Dispose();
                 throw new TimeoutException(ex.Message + FormatLogRecording(_logs), ex);
             }
             catch (Exception ex)
             {
+                _error = ex.ToString();
                 dispose?.Invoke();
                 Dispose();
                 throw new PlaywrightSharpException(ex.Message + FormatLogRecording(_logs), ex);

@@ -46,7 +46,7 @@ namespace Microsoft.Playwright
         /// <summary>
         /// <see cref="PlaywrightEvent{T}"/> representing a <see cref="IPage.Popup"/>.
         /// </summary>
-        public static PlaywrightEvent<IPage> Popup { get; } = new PlaywrightEvent<IPage>() { Name = "Popup" };
+        public static PlaywrightEvent<IPage> Popup { get; } = new PlaywrightEvent<IPage>() { Name = "Popup", ApiName = "page.waitForEvent(popup)" };
 
         /// <summary>
         /// <see cref="PlaywrightEvent{T}"/> representing a <see cref="IPage.FrameNavigated"/>.
@@ -66,7 +66,7 @@ namespace Microsoft.Playwright
         /// <summary>
         /// <see cref="PlaywrightEvent{T}"/> representing a <see cref="IPage.Dialog"/>.
         /// </summary>
-        public static PlaywrightEvent<IDialog> Dialog { get; } = new PlaywrightEvent<IDialog>() { Name = "Dialog" };
+        public static PlaywrightEvent<IDialog> Dialog { get; } = new PlaywrightEvent<IDialog>() { Name = "Dialog", ApiName = "page.waitForEvent(dialog)" };
 
         /// <summary>
         /// <see cref="PlaywrightEvent{T}"/> representing a <see cref="IPage.FileChooser"/>.
